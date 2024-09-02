@@ -1,4 +1,4 @@
-import connectionPool from '../../db';
+const connectionPool = require('../../db');
 import {
   CustomerField,
   CustomersTableType,
@@ -23,7 +23,7 @@ export async function fetchRevenue() {
     console.log('Fetching revenue data...');
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    const data = await connectionPool.query<Revenue>(`SELECT * FROM revenue`);
+    const data = await connectionPool.query(`SELECT * FROM revenue`);
 
     console.log('Data fetch completed after 3 seconds.');
 
@@ -38,14 +38,14 @@ export async function fetchLatestInvoices() {
   noStore();
 
   try {
-    const data = await connectionPool.query<LatestInvoiceRaw>(`
+    const data = await connectionPool.query(`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
       FROM invoices
       JOIN customers ON invoices.customer_id = customers.id
       ORDER BY invoices.date DESC
       LIMIT 5`);
 
-    const latestInvoices = data.rows.map((invoice) => ({
+    const latestInvoices = data.rows.map((invoice: InvoicesTable) => ({
       ...invoice,
       amount: formatCurrency(invoice.amount),
     }));
@@ -102,7 +102,7 @@ export async function fetchFilteredInvoices(
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
-    const invoices = await connectionPool.query<InvoicesTable>(`
+    const invoices = await connectionPool.query(`
       SELECT
         invoices.id,
         invoices.amount,
@@ -157,17 +157,17 @@ export async function fetchInvoiceById(id: string) {
   noStore();
 
   try {
-    const data = await connectionPool.query<InvoiceForm>(`
+    const data = await connectionPool.query(`
       SELECT
         invoices.id,
         invoices.customer_id,
         invoices.amount,
         invoices.status
       FROM invoices
-      WHERE invoices.id = ${id};
+      WHERE invoices.id = '${id}';
     `);
 
-    const invoice = data.rows.map((invoice) => ({
+    const invoice = data.rows.map((invoice: InvoicesTable) => ({
       ...invoice,
       // Convert amount from cents to dollars
       amount: invoice.amount / 100,
@@ -182,7 +182,7 @@ export async function fetchInvoiceById(id: string) {
 
 export async function fetchCustomers() {
   try {
-    const data = await connectionPool.query<CustomerField>(`
+    const data = await connectionPool.query(`
       SELECT
         id,
         name
@@ -202,7 +202,7 @@ export async function fetchFilteredCustomers(query: string) {
   noStore();
 
   try {
-    const data = await connectionPool.query<CustomersTableType>(`
+    const data = await connectionPool.query(`
 		SELECT
 		  customers.id,
 		  customers.name,
@@ -220,7 +220,7 @@ export async function fetchFilteredCustomers(query: string) {
 		ORDER BY customers.name ASC
 	  `);
 
-    const customers = data.rows.map((customer) => ({
+    const customers = data.rows.map((customer: CustomersTableType) => ({
       ...customer,
       total_pending: formatCurrency(customer.total_pending),
       total_paid: formatCurrency(customer.total_paid),

@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-import { sql } from '@vercel/postgres';
+const connectionPool = require('../../db');
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { signIn } from '@/auth';
@@ -57,10 +57,10 @@ export async function createInvoice(prevState: State, formData: FormData) {
   const date = new Date().toISOString().split('T')[0];
 
   try {
-    await sql`
+    await connectionPool.query(`
       INSERT INTO invoices (customer_id, amount, status, date)
-      VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-    `;
+      VALUES ('${customerId}', '${amountInCents}', '${status}', '${date}')
+    `);
   } catch (error) {
     return {
       message: 'Database Error: Failed to Create Invoice.',
@@ -92,11 +92,11 @@ export async function updateInvoice(id: string, prevState: State, formData: Form
   const amountInCents = amount * 100;
 
   try {
-   await sql`
+   await connectionPool.query(`
      UPDATE invoices
-     SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-     WHERE id = ${id}
-   `;
+     SET customer_id = '${customerId}', amount = '${amountInCents}', status = '${status}'
+     WHERE id = '${id}'
+   `);
   } catch (error) {
     return {
       message: 'Database Error: Failed to Update Invoice.',
@@ -109,7 +109,7 @@ export async function updateInvoice(id: string, prevState: State, formData: Form
 
 export async function deleteInvoice(id: string) {
   try {
-    await sql`DELETE FROM invoices WHERE id = ${id}`;
+    await connectionPool.query(`DELETE FROM invoices WHERE id = '${id}'`);
     revalidatePath('/dashboard/invoices');
     return { message: 'Deleted Invoice.' };
   } catch (error) {
